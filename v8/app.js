@@ -32,7 +32,7 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-//a middleware that will run for EVERY ROUTES
+//a middleware that will run for EVERY ROUTES, for every routes, currentUser is available
 app.use(function(req, res, next) {
     res.locals.currentUser = req.user;
     next();
