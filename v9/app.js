@@ -7,6 +7,7 @@ const seedDB = require("./seeds");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const methodOverride = require("method-override");
+const flash = require("connect-flash");
 
 // requiring routes
 const commentRoutes = require("./routes/comments"),
@@ -18,6 +19,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.use(express.static(__dirname + "/public"));
 app.use(methodOverride("_method"));
+//use flash before passport configuration
+app.use(flash());
 // seedDB(); //seed the database
 
 //passport configuration
@@ -26,6 +29,7 @@ app.use(require("express-session")({
     resave: false,
     saveUninitialized: false
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
@@ -35,6 +39,8 @@ passport.deserializeUser(User.deserializeUser());
 //a middleware that will run for EVERY ROUTES, for every routes, currentUser is available
 app.use(function(req, res, next) {
     res.locals.currentUser = req.user;
+    res.locals.error = req.flash("error");
+    res.locals.success = req.flash("success");
     next();
 });
 

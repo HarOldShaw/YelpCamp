@@ -4,7 +4,7 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("../models/user");
 
-// Roo.t route
+// Root route
 router.get("/", function(req, res) {
     res.render("landing");
 });
@@ -23,11 +23,12 @@ router.post("/register", function(req, res) {
     });
     User.register(newUser, req.body.password, function(err, user) {
         if (err) {
-            console.log(err);
-            return res.render("register")
+            req.flash("error", err.message);
+            return res.redirect("register")
         }
         //user sign up - log in- authenticate - redirect
         passport.authenticate("local")(req, res, function() {
+            req.flash("success", "Welcomne to YelpCamp, " + user.username);
             res.redirect("/campgrounds");
         });
     });
@@ -36,7 +37,7 @@ router.post("/register", function(req, res) {
 // show LOGIN form
 router.get("/login", function(req, res) {
     res.render("login");
-})
+});
 
 //handle LOGIN logic => app.post("/",middleware, callback)
 router.post("/login", passport.authenticate("local", {
@@ -49,15 +50,8 @@ router.post("/login", passport.authenticate("local", {
 //LOGOUT route
 router.get("/logout", function(req, res) {
     req.logout();
+    req.flash("success", "Logged you out!");
     res.redirect("/campgrounds");
 })
-
-// middleware
-function isLoggedIn(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.redirect("/login");
-}
 
 module.exports = router;

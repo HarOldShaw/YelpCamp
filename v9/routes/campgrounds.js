@@ -27,11 +27,12 @@ router.post("/", middleware.isLoggedIn, function(req, res) {
     var name = req.body.name;
     var image = req.body.image;
     var desc = req.body.description;
+    var price = req.body.price;
     var author = {
         id: req.user._id,
         username: req.user.username
     };
-    var newCampground = { name: name, image: image, description: desc, author: author };
+    var newCampground = { name: name, image: image, description: desc, price: price, author: author };
 
     //Create a new campground and save to DB
     Campground.create(newCampground, function(err, newCampground) {
@@ -65,7 +66,11 @@ router.get("/:id", function(req, res) {
 //Edit Campground Route
 router.get("/:id/edit", middleware.checkCampgroundOwnership, function(req, res) {
     Campground.findById(req.params.id, function(err, foundCampground) {
-        res.render("campgrounds/edit", { campground: foundCampground });
+        if (err) {
+            res.redirect("/campgrounds");
+        } else {
+            res.render("campgrounds/edit", { campground: foundCampground });
+        }
     });
 });
 
