@@ -1,0 +1,28 @@
+<% include ../partials/header%>
+
+<div class="row">
+    <div class="col-md-4">
+       <h1><%= user.firstName + " " + user.lastName%></h1>
+        <div class="thumbnail">
+            <img src="<%= user.avatar%>" alt="User Profile Image">
+            <div class="caption"><a href="mailto:<%= user.email%>"><%= user.email%></a></div>
+        </div>
+    Bacon ipsum dolor amet venison pork loin strip steak rump chicken porchetta meatloaf burgdoggen andouille shankle. Shankle boudin bresaola cupim shank ribeye. Swine ham ribeye flank, tail pork chop pork spare ribs turkey capicola filet mignon buffalo ham hock sirloin. Brisket andouille kevin bacon. Pancetta tail andouille shank, pork loin meatball pork belly filet mignon chicken.
+    </div>
+    <div class="col-md-8">
+        <ul>
+            <h3> 
+                Campgrounds that has been created by <%= user.firstName%>    
+            </h3>
+            <% campgrounds.forEach(function(campground){ %>
+                <li>
+                    <a href="/campgrounds/<%=campground.id%>">
+                        <%= campground.name%> 
+                    </a>
+                </li>
+            <%});%>
+        </ul>    
+    </div>
+</div>
+
+<% include ../partials/footer%>
