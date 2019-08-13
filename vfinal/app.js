@@ -48,7 +48,7 @@ app.use(function(req, res, next) {
 //use the routes in the route file
 app.use("/", indexRoutes);
 app.use("/campgrounds", campgroundRoutes);
-app.use("/campgrounds/:id/comments", commentRoutes);
+app.use("/campgrounds/:slug/comments", commentRoutes);
 
 
 app.listen(3000, function() {

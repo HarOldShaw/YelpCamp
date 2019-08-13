@@ -54,11 +54,6 @@ router.get("/", function(req, res) {
     }
 });
 
-//New route
-router.get("/new", middleware.isLoggedIn, function(req, res) {
-    res.render("campgrounds/new.ejs");
-});
-
 //Create route
 router.post("/", middleware.isLoggedIn, upload.single('image'), function(req, res) {
     cloudinary.v2.uploader.upload(req.file.path, function(err, result) {
@@ -80,15 +75,20 @@ router.post("/", middleware.isLoggedIn, upload.single('image'), function(req, re
                 req.flash('error', err.message);
                 return res.redirect('back');
             }
-            res.redirect('/campgrounds/' + campground.id);
+            res.redirect('/campgrounds/' + campground.slug);
         });
     });
 });
 
+//New route
+router.get("/new", middleware.isLoggedIn, function(req, res) {
+    res.render("campgrounds/new.ejs");
+});
+
 //Show - show more info about one campground
-router.get("/:id", function(req, res) {
-    //find the campground with the provided id
-    Campground.findById(req.params.id).populate("comment").exec(function(err, foundCampground) {
+router.get("/:slug", function(req, res) {
+    //find the campground with the provided slug
+    Campground.findOne({ slug: req.params.slug }).populate("comment likes").exec(function(err, foundCampground) {
         if (err) {
             console.log("error: " + err);
         } else {
@@ -100,8 +100,8 @@ router.get("/:id", function(req, res) {
 
 
 //Edit Campground Route
-router.get("/:id/edit", middleware.checkCampgroundOwnership, function(req, res) {
-    Campground.findById(req.params.id, function(err, foundCampground) {
+router.get("/:slug/edit", middleware.checkCampgroundOwnership, function(req, res) {
+    Campground.findOne({ slug: req.params.slug }, function(err, foundCampground) {
         if (err) {
             res.redirect("/campgrounds");
         } else {
@@ -112,26 +112,68 @@ router.get("/:id/edit", middleware.checkCampgroundOwnership, function(req, res) 
 
 
 //UPDATE Campground Route
-router.put("/:id", middleware.checkCampgroundOwnership, function(req, res) {
+router.put("/:slug", middleware.checkCampgroundOwnership, function(req, res) {
     //find and update the correct campground
-    Campground.findByIdAndUpdate(req.params.id, req.body.campground, function(err, updatedCampground) {
+    Campground.findOne({ slug: req.params.slug }, function(err, campground) {
         if (err) {
             res.redirect("/campgrounds");
         } else {
-            res.redirect("/campgrounds/" + req.params.id);
+            campground.name = req.body.campground.name;
+            campground.description = req.body.campground.description;
+            campground.image = req.body.campground.image;
+            campground.save(function(err) {
+                if (err) {
+                    console.log("err:" + err);
+                    res.redirect("/campgrounds");
+                } else {
+                    res.redirect("/campgrounds/" + campground.slug);
+                }
+            });
         }
     });
-    //redirect somewhere(show page)
 })
 
 // DESTROY Campground Route
-router.delete("/:id", middleware.checkCampgroundOwnership, function(req, res) {
-    Campground.findByIdAndRemove(req.params.id, function(err) {
+router.delete("/:slug", middleware.checkCampgroundOwnership, function(req, res) {
+    Campground.findOneAndRemove({ slug: req.params.slug }, function(err) {
         if (err) {
+            console.log("err in delete:" + err);
             res.redirect("/campgrounds");
         } else {
             res.redirect("/campgrounds");
         }
+    });
+});
+
+//Campground Like Route
+router.post("/:slug/like", middleware.isLoggedIn, function(req, res) {
+    Campground.findOne({ slug: req.params.slug }, function(err, foundCampground) {
+        if (err) {
+            console.log(err);
+            return res.redirect("/campgrounds");
+        }
+
+        // check if req.user._id exists in foundCampground.likes
+        var foundUserLike = foundCampground.likes.some(function(like) {
+            return like.equals(req.user._id);
+        })
+
+        if (foundUserLike) {
+            //user already like, removing like
+            foundCampground.likes.pull(req.user._id);
+        } else {
+            //adding the new user like
+            foundCampground.likes.push(req.user._id);
+        }
+
+        //save
+        foundCampground.save(function(err) {
+            if (err) {
+                console.log(err);
+                return res.redirect("/campgrounds");
+            }
+            return res.redirect("/campgrounds/" + foundCampground.slug);
+        });
     });
 });
 
