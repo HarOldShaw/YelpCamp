@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const Campground = require("../models/campground");
+const Review = require("../models/review");
+const Comment = require("../models/comment");
 const middleware = require("../middleware/index");
 const multer = require('multer');
 require('dotenv').config();
@@ -88,7 +90,10 @@ router.get("/new", middleware.isLoggedIn, function(req, res) {
 //Show - show more info about one campground
 router.get("/:slug", function(req, res) {
     //find the campground with the provided slug
-    Campground.findOne({ slug: req.params.slug }).populate("comment likes").exec(function(err, foundCampground) {
+    Campground.findOne({ slug: req.params.slug }).populate("comment likes").populate({
+        path: "reviews",
+        options: { sort: { createdAt: -1 } }
+    }).exec(function(err, foundCampground) {
         if (err) {
             console.log("error: " + err);
         } else {
@@ -113,12 +118,13 @@ router.get("/:slug/edit", middleware.checkCampgroundOwnership, function(req, res
 
 //UPDATE Campground Route
 router.put("/:slug", middleware.checkCampgroundOwnership, function(req, res) {
-    //find and update the correct campground
-    Campground.findOne({ slug: req.params.slug }, function(err, campground) {
+    delete req.body.campground.rating; //protect the campground.rating field from manipulation
+    Campground.findOne({ slug: req.params.slug }, function(err, campground) { //find and update the correct campground
         if (err) {
             res.redirect("/campgrounds");
         } else {
             campground.name = req.body.campground.name;
+            campground.price = req.body.campground.price;
             campground.description = req.body.campground.description;
             campground.image = req.body.campground.image;
             campground.save(function(err) {
@@ -134,13 +140,30 @@ router.put("/:slug", middleware.checkCampgroundOwnership, function(req, res) {
 })
 
 // DESTROY Campground Route
-router.delete("/:slug", middleware.checkCampgroundOwnership, function(req, res) {
-    Campground.findOneAndRemove({ slug: req.params.slug }, function(err) {
+router.delete("/:slug", middleware.checkCampgroundOwnership, function(req, res) { //
+    Campground.findOne({ slug: req.params.slug }, function(err, campground) {
         if (err) {
-            console.log("err in delete:" + err);
+            console.log("err in delete campground:" + err);
             res.redirect("/campgrounds");
         } else {
-            res.redirect("/campgrounds");
+            // remove all the associated Comment and Review documents from the database when we delete the campground. 
+            Comment.remove({ "_id": { $in: campground.comment } }, function(err) { //delete all related comments
+                if (err) {
+                    console.log(err);
+                    return res.redirect("/campgrounds");
+                }
+                //delete all related reviews
+                Review.remove({ "_id": { $in: campground.reviews } }, function(err) {
+                    if (err) {
+                        console.log(err);
+                        return res.redirect("/campgrounds");
+                    }
+                    //delete the campground
+                    campground.remove();
+                    req.flash("success", "Campground deleted successfully!");
+                    res.redirect("/campgrounds");
+                });
+            });
         }
     });
 });

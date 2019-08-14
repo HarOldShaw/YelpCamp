@@ -1,4 +1,6 @@
 var mongoose = require("mongoose");
+var Review = require("./review");
+
 var campgroundSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -19,6 +21,14 @@ var campgroundSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Comment"
     }],
+    reviews: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Review"
+    }],
+    rating: {
+        type: Number,
+        default: 0
+    },
     likes: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"

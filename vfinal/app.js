@@ -12,7 +12,8 @@ const flash = require("connect-flash");
 // requiring routes
 const commentRoutes = require("./routes/comments"),
     campgroundRoutes = require("./routes/campgrounds"),
-    indexRoutes = require("./routes/index");
+    indexRoutes = require("./routes/index"),
+    reviewRoutes = require("./routes/reviews");
 
 mongoose.connect("mongodb://localhost:27017/yelp_camp", { useNewUrlParser: true });
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -49,6 +50,7 @@ app.use(function(req, res, next) {
 app.use("/", indexRoutes);
 app.use("/campgrounds", campgroundRoutes);
 app.use("/campgrounds/:slug/comments", commentRoutes);
+app.use("/campgrounds/:slug/reviews", reviewRoutes);
 
 
 app.listen(3000, function() {
